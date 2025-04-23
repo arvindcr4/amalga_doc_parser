@@ -11,34 +11,48 @@ from pathlib import Path
 
 from amalga_doc_parser import parse_document
 from amalga_doc_parser.models import Document, Section, Table, Reference
+from amalga_doc_parser.parser import DocumentParser, ParserError
 
 
-class TestParser(unittest.TestCase):
-    """Test case for the document parser."""
-
+class TestDocumentParser(unittest.TestCase):
+    """Test cases for the document parser functionality."""
+    
     def setUp(self):
-        """Set up the test environment."""
+        """Set up test fixtures."""
         self.test_data_dir = Path(__file__).parent / "data"
         self.sample_file = self.test_data_dir / "sample.md"
-
+        self.parser = DocumentParser()
+        
+    def test_file_exists(self):
+        """Test that the sample file exists."""
+        self.assertTrue(os.path.exists(self.sample_file), 
+                       f"Sample file not found: {self.sample_file}")
+        
     def test_parse_document(self):
-        """Test basic document parsing."""
-        # Parse the sample document
-        doc = parse_document(str(self.sample_file))
+        """Test parsing a complete document."""
+        document = parse_document(str(self.sample_file))
         
-        # Test basic document properties
-        self.assertEqual(doc.title, "Sample Platform Analysis")
-        self.assertGreater(len(doc.sections), 0)
+        # Basic document structure checks
+        self.assertIsInstance(document, Document)
+        self.assertEqual(document.title, "Sample Platform Analysis")  # Based on document's first level-1 header
         
-        # Verify Executive Summary section exists
-        exec_summary = None
-        for section in doc.sections:
-            if "Executive Summary" in section.name:
-                exec_summary = section
-                break
+        # Check sections
+        self.assertGreaterEqual(len(document.sections), 4, 
+                               "Document should have at least 4 top-level sections")
         
-        self.assertIsNotNone(exec_summary, "Executive Summary section not found")
-        self.assertGreater(len(exec_summary.content), 0)
+        # Check section names
+        section_names = [section.name for section in document.sections]
+        self.assertIn("Executive Summary", section_names)
+        self.assertIn("Platform Overview: Origins, Evolution, and Market Context", 
+                     section_names)
+        
+        # Check tables
+        self.assertGreaterEqual(len(document.tables), 1, 
+                               "Document should have at least one table")
+        
+        # Check references
+        self.assertGreaterEqual(len(document.references), 3, 
+                               "Document should have at least 3 references")
 
     def test_document_serialization(self):
         """Test JSON serialization and deserialization."""
@@ -58,85 +72,10 @@ class TestParser(unittest.TestCase):
         self.assertEqual(len(loaded_doc.sections), 1)
         self.assertEqual(len(loaded_doc.tables), 1)
         self.assertEqual(len(loaded_doc.references), 1)
-
-    def test_section_hierarchy(self):
-        """Test section hierarchy parsing."""
-        # Parse the sample document
-        doc = parse_document(str(self.sample_file))
-        
-        # Find a section with subsections
-        section_with_subsections = None
-        for section in doc.sections:
-            if section.subsections:
-                section_with_subsections = section
-                break
-        
-        self.assertIsNotNone(section_with_subsections, "No section with subsections found")
-        self.assertGreater(len(section_with_subsections.subsections), 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
-
-"""
-Unit tests for the Amalga Doc Parser document parser.
-"""
-
-import unittest
-import os
-import json
-from pathlib import Path
-
-# Add parent directory to path to enable imports
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from src.amalga_doc_parser.models import Document, Section, Table, Reference
-from src.amalga_doc_parser.parser import DocumentParser, parse_document, ParserError
-
-
-class TestDocumentParser(unittest.TestCase):
-    """Test cases for the document parser functionality."""
-    
-    def setUp(self):
-        """Set up test fixtures."""
-        self.sample_file = os.path.join(os.path.dirname(__file__), 'data', 'sample.md')
-        self.parser = DocumentParser()
-        
-    def test_file_exists(self):
-        """Test that the sample file exists."""
-        self.assertTrue(os.path.exists(self.sample_file), 
-                       f"Sample file not found: {self.sample_file}")
-        
-    def test_parse_document(self):
-        """Test parsing a complete document."""
-        document = parse_document(self.sample_file)
-        
-        # Basic document structure checks
-        self.assertIsInstance(document, Document)
-        self.assertEqual(document.title, "Sample")  # Based on filename
-        
-        # Check sections
-        self.assertGreaterEqual(len(document.sections), 4, 
-                               "Document should have at least 4 top-level sections")
-        
-        # Check section names
-        section_names = [section.name for section in document.sections]
-        self.assertIn("Executive Summary", section_names)
-        self.assertIn("Platform Overview: Origins, Evolution, and Market Context", 
-                     section_names)
-        
-        # Check tables
-        self.assertGreaterEqual(len(document.tables), 1, 
-                               "Document should have at least one table")
-        
-        # Check references
-        self.assertGreaterEqual(len(document.references), 3, 
-                               "Document should have at least 3 references")
         
     def test_section_hierarchy(self):
         """Test correct parsing of section hierarchy."""
-        document = parse_document(self.sample_file)
+        document = parse_document(str(self.sample_file))
         
         # Find Platform Overview section
         platform_section = None
@@ -159,7 +98,7 @@ class TestDocumentParser(unittest.TestCase):
         
     def test_table_parsing(self):
         """Test table extraction and parsing."""
-        document = parse_document(self.sample_file)
+        document = parse_document(str(self.sample_file))
         
         # Find the product family table
         product_table = None
@@ -191,7 +130,7 @@ class TestDocumentParser(unittest.TestCase):
         
     def test_reference_extraction(self):
         """Test extraction of numbered references."""
-        document = parse_document(self.sample_file)
+        document = parse_document(str(self.sample_file))
         
         # Check we have the expected references
         self.assertGreaterEqual(len(document.references), 3)
@@ -210,7 +149,7 @@ class TestDocumentParser(unittest.TestCase):
             
     def test_document_to_json(self):
         """Test serialization of document to JSON."""
-        document = parse_document(self.sample_file)
+        document = parse_document(str(self.sample_file))
         json_str = document.to_json()
         
         # Verify it's valid JSON
@@ -225,7 +164,7 @@ class TestDocumentParser(unittest.TestCase):
             
     def test_document_roundtrip(self):
         """Test document serialization and deserialization roundtrip."""
-        original = parse_document(self.sample_file)
+        original = parse_document(str(self.sample_file))
         json_str = original.to_json()
         
         # Deserialize back to document
@@ -236,8 +175,7 @@ class TestDocumentParser(unittest.TestCase):
         self.assertEqual(len(original.sections), len(roundtrip.sections))
         self.assertEqual(len(original.tables), len(roundtrip.tables))
         self.assertEqual(len(original.references), len(roundtrip.references))
-            
+
 
 if __name__ == '__main__':
     unittest.main()
-
