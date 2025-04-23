@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=67", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "amalga_doc_parser"
+dynamic = ["version", "readme"]
+description = "A tool for parsing and managing healthcare platform analysis documents"
+authors = [
+    {name = "Amalga Health Platform Team", email = "developer@example.com"}
+]
+license = "MIT"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Text Processing :: Markup :: Markdown",
+]
+keywords = ["healthcare", "document", "parser", "markdown", "analysis"]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/example/amalga_doc_parser"
+Issues = "https://github.com/example/amalga_doc_parser/issues"
+Documentation = "https://github.com/example/amalga_doc_parser#readme"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["amalga_doc_parser"]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "amalga_doc_parser.__version__"}
+readme = {file = ["README.md"], content-type = "text/markdown"}
+

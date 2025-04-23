@@ -1,0 +1,7 @@
+include README.md LICENSE
+include pyproject.toml
+recursive-include docs *.md *.rst *.txt *.png *.jpg *.jpeg *.gif
+recursive-include tests *.py *.md *.txt *.json
+recursive-include src/amalga_doc_parser *.py
+global-exclude *.py[cod] __pycache__ *.so .DS_Store
+
